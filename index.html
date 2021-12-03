@@ -1,19 +1,112 @@
 <!DOCTYPE html>
+<head>
 <meta charset="utf-8">
 <style>
+    body {
+        font-family: Helvetica, sans-serif;
+    }
+
+    .note {
+        color: #999;
+        margin: 20px;
+        font-size: 12px;
+    }
+
+    h1 {
+        font-size: 1.5rem;
+    }
 
     .links line {
-        stroke: #999;
-        stroke-opacity: 0.6;
+        stroke: #ccc;
+        stroke-width: 0.5px;
+        stroke-opacity: 0.8;
     }
 
     .nodes circle {
-        stroke: #fff;
-        stroke-width: 1px;
+        stroke: #666;
+    }
+
+    .svg-container{
+        border: thin solid #eee;
+    }
+
+    .container{
+        margin: 0 auto;
+        width: 1000px;
+    }
+
+    .legend {
+        display: inline;
+        width: 10px;
+        height: 10px
+    }
+
+    .legend-text {
+        display: inline-block;
+        margin: 0;
+    }
+
+    .supertype {
+    }
+
+    .supertype circle {
+        fill: #efedf5;
+        stroke-width: 0.5px;
+        stroke: #000;
+    }
+
+    .type {
+        fill: #bcbddc;
+        stroke: #666;
+        stroke-width: 0.5px;
+
+    }
+
+    .subtype {
+        fill: #756bb1;
+    }
+
+    .legend-box {
+        font-size: 0.8rem;
+        margin: 0 20px;
+        border: thin solid #eee;
+        width: 120px;
+        padding: 10px;
     }
 
 </style>
-<svg width="1000" height="1000"></svg>
+</head>
+<body>
+<div class="container">
+    <h1>Magic: The Gathering - Supertypes, Types, and Subtypes Visualization</h1>
+    <div class="svg-container">
+        <svg width="1000" height="600"></svg>
+
+        <div class="legend-box">
+            <div>
+                <svg class="supertype legend" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+                    <circle cx="50" cy="50" r="50" />
+                </svg>
+                <p class="legend-text">Supertype</p>
+            </div>
+            <div>
+                <svg class="type legend" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+                    <circle cx="50" cy="50" r="50"/>
+                </svg>
+                <p class="legend-text">Type</p>
+            </div>
+            <div>
+                <svg class="subtype legend" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+                    <circle cx="50" cy="50" r="50"/>
+                </svg>
+                <p class="legend-text">Subtype</p>
+            </div>
+        </div>
+        <p class="note">Graph is interactive, hover to see which type a node is, zoom in, and drag to explore.</p>
+
+    </div>
+
+</div>
 <script src="https://d3js.org/d3.v7.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/d3-color@3"></script>
 <script src="https://cdn.jsdelivr.net/npm/d3-interpolate@3"></script>
@@ -29,27 +122,36 @@
     var simulation = d3.forceSimulation()
         .force("link", d3.forceLink().id(function(d) { return d.value; }))
         .force("x",d3.forceX(width/2).strength(0.4))
-        .force("y",d3.forceY(height/2).strength(0.6))
-        .force("charge", d3.forceManyBody().strength(-500))
+        .force("y",d3.forceY(height/2).strength(0.8))
+        .force("charge", d3.forceManyBody().strength(-160))
         .force("center", d3.forceCenter(width / 2, height / 2))
-        .force("collide",d3.forceCollide().radius(d => d.r * 10))
+        .force("collide",d3.forceCollide().radius(d => d.r * 20))
+
+
+
 
     d3.json("data.json").then(function(graph) {
-        var link = svg.append("g")
+
+        var scale = d3.scalePow().domain([ 1, 12379 ]).range([ 3, 20 ]);
+
+        var g = svg.append("g")
+            .attr("class", "everything");
+
+        var link = g.append("g")
             .attr("class", "links")
             .selectAll("line")
             .data(graph.links)
             .enter().append("line")
-            // .attr("stroke-width", function(d) { return Math.sqrt(d.value); });
             .attr("stroke-width", 1);
 
-        var node = svg.append("g")
+        var node = g.append("g")
             .attr("class", "nodes")
             .selectAll("circle")
             .data(graph.nodes)
             .enter().append("circle")
-            .attr("r", function(d) { return Math.sqrt(d.count); })
+            .attr("r", function(d) { return scale(d.count)})
             .attr("fill", function(d) { return color(d.group); })
+            .attr("stroke-width", function(d) { return  "0.5px"})
             .call(d3.drag()
                 .on("start", dragstarted)
                 .on("drag", dragged)
@@ -64,6 +166,17 @@
 
         simulation.force("link")
             .links(graph.links);
+
+        //Zoom functions
+        function zoom_actions(event){
+            g.attr("transform", event.transform)
+        }
+
+        //add zoom capabilities
+        var zoom_handler = d3.zoom()
+            .on("zoom", zoom_actions);
+
+        zoom_handler(svg);
 
         function ticked() {
             link
@@ -96,4 +209,4 @@
     }
 
 </script>
-
+</body>
